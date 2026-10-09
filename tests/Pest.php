@@ -3,10 +3,10 @@
 use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory;
-use LeanCaptain\LaraEmail\Rules\PermanentEmailDomain;
+use LeanCaptain\LaraEmail\Rules\UsableEmailDomain;
 
 /** @return list<string> */
-function emailDomainErrors(PermanentEmailDomain $rule, mixed $email): array
+function emailDomainErrors(UsableEmailDomain $rule, mixed $email): array
 {
     $errors = [];
     $rule->validate('email', $email, function (string $message) use (&$errors): void {

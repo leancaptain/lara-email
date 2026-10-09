@@ -6,15 +6,20 @@ namespace LeanCaptain\LaraEmail\Rules;
 
 use Closure;
 use Egulias\EmailValidator\Validation\DNSGetRecordWrapper;
+use Exception;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Validation\ValidationRule;
 use RuntimeException;
 
-class PermanentEmailDomain implements ValidationRule
+class UsableEmailDomain implements ValidationRule
 {
     /** @var array<string, int>|null */
     private ?array $blockedDomains = null;
 
-    public function __construct(private readonly DNSGetRecordWrapper $dnsRecords = new DNSGetRecordWrapper) {}
+    public function __construct(
+        private readonly DNSGetRecordWrapper $dnsRecords = new DNSGetRecordWrapper,
+        private readonly ?Repository $cache = null,
+    ) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
@@ -44,10 +49,66 @@ class PermanentEmailDomain implements ValidationRule
             return;
         }
 
+        $cacheKey = 'lara-email:mx:v1:'.hash('sha256', $domain);
+
+        if ($this->hasCachedMailRecord($cacheKey)) {
+            return;
+        }
+
         $records = $this->dnsRecords->getRecords($domain, DNS_MX);
 
-        if ($records->withError() || ! $this->hasUsableMailRecord($records->getRecords())) {
+        if ($records->withError()) {
+            $fail('We could not verify the email domain right now. Please try again.');
+
+            return;
+        }
+
+        if (! $this->hasUsableMailRecord($records->getRecords())) {
             $fail('Please use an email address with a domain that can receive email.');
+
+            return;
+        }
+
+        $this->cacheMailRecord($cacheKey, $records->getRecords());
+    }
+
+    private function hasCachedMailRecord(string $key): bool
+    {
+        try {
+            return $this->cache?->get($key) === true;
+        } catch (Exception) {
+            // A cache outage must not prevent a live DNS check.
+            return false;
+        }
+    }
+
+    /** @param list<array<array-key, mixed>> $records */
+    private function cacheMailRecord(string $key, array $records): void
+    {
+        if ($this->cache === null) {
+            return;
+        }
+
+        $ttl = 300;
+
+        foreach ($records as $record) {
+            if (($record['type'] ?? null) !== 'MX') {
+                continue;
+            }
+
+            $recordTtl = $record['ttl'] ?? null;
+
+            if (! is_int($recordTtl) || $recordTtl <= 0) {
+                return;
+            }
+
+            $ttl = min($ttl, $recordTtl);
+        }
+
+        try {
+            $this->cache->put($key, true, $ttl);
+        } catch (Exception) {
+            // Validation already succeeded; caching is optional.
         }
     }
 

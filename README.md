@@ -20,51 +20,29 @@ Illuminate contracts, rather than the entire Laravel framework.
 
 ## Installation
 
-After the first tagged release is published on Packagist:
+Install the package with Composer:
 
 ```sh
 composer require leancaptain/lara-email
 ```
-
-Before Packagist publication, add the Git repository to your application's
-`composer.json` (the repository must be publicly readable):
-
-```json
-{
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/leancaptain/lara-email"
-        }
-    ]
-}
-```
-
-Then install the development branch:
-
-```sh
-composer require leancaptain/lara-email:dev-main
-```
-
-Use a tagged release for production once one is available.
 
 ## Usage
 
 Add the rule to a Form Request or a call to Laravel's validator:
 
 ```php
-use LeanCaptain\LaraEmail\Rules\PermanentEmailDomain;
+use LeanCaptain\LaraEmail\Rules\UsableEmailDomain;
 
 public function rules(): array
 {
     return [
-        'email' => ['bail', 'required', 'string', 'email', new PermanentEmailDomain],
+        'email' => ['bail', 'required', 'string', 'email', new UsableEmailDomain],
     ];
 }
 ```
 
 Laravel's `email` rule validates syntax. `bail` stops validation before the DNS
-lookup if an earlier rule fails. Always pair `PermanentEmailDomain` with `email`;
+lookup if an earlier rule fails. Always pair `UsableEmailDomain` with `email`;
 the domain rule does not validate the complete email address.
 
 The rule:
@@ -73,7 +51,8 @@ The rule:
 - Rejects bundled disposable domains and their subdomains.
 - Normalizes domain case and internationalized names to ASCII.
 - Requires an MX record with a nonempty target other than `.` for the exact email domain.
-- Rejects missing MX records, null MX records, and DNS lookup errors.
+- Rejects missing MX records and null MX records. DNS lookup errors fail validation
+  with a separate message asking the user to retry.
 
 For example, `john@yopmail.com` fails without a DNS lookup. A permanent domain
 passes only when its MX lookup returns a usable record. A subdomain such as
@@ -90,13 +69,33 @@ The rule runs whenever it is applied. Your application can choose when to requir
 
 ```php
 use Illuminate\Validation\Rule;
-use LeanCaptain\LaraEmail\Rules\PermanentEmailDomain;
+use LeanCaptain\LaraEmail\Rules\UsableEmailDomain;
 
 'email' => [
     'bail', 'required', 'string', 'email',
-    Rule::when(app()->isProduction(), [new PermanentEmailDomain]),
+    Rule::when(app()->isProduction(), [new UsableEmailDomain]),
 ],
 ```
+
+### Optional DNS caching
+
+Pass your application's cache store to avoid repeated lookups for the same domain:
+
+```php
+use Illuminate\Support\Facades\Cache;
+use LeanCaptain\LaraEmail\Rules\UsableEmailDomain;
+
+'email' => [
+    'bail', 'required', 'string', 'email',
+    new UsableEmailDomain(cache: Cache::store()),
+],
+```
+
+Caching is disabled by default. Successful MX checks are cached for the shortest
+returned MX TTL, capped at five minutes. Responses with missing, zero, or invalid
+TTLs are not cached. Failed checks and DNS errors are never cached. The blocklist
+is checked on every validation, including cache hits. Cache failures fall back to
+live DNS checks; a failed cache write does not invalidate a successful check.
 
 ### Validation messages
 
@@ -104,13 +103,17 @@ use LeanCaptain\LaraEmail\Rules\PermanentEmailDomain;
 |---------------------------------------------------|-----------------------------------------------------------------------------------------------|
 | Non-string input, missing `@`, or empty domain    | Please enter a valid email address.                                                           |
 | Invalid IDN, example domain, or disposable domain | Please use a permanent email address. Example and disposable email addresses are not allowed. |
-| DNS error or no usable MX record                  | Please use an email address with a domain that can receive email.                             |
+| No usable MX record                               | Please use an email address with a domain that can receive email.                             |
+| DNS lookup error                                  | We could not verify the email domain right now. Please try again.                             |
 
 ### Limitations
 
-DNS lookups are synchronous and are not cached by this package. Resolver latency
-can slow validation, and temporary DNS failures cause validation to fail. Apply
-the rule where a live domain check is appropriate, such as registration.
+Uncached DNS lookups are synchronous. Resolver latency can slow validation; the
+native DNS function does not offer a per-call timeout. Optional caching reduces
+repeat lookups, but cached results may lag DNS changes until they expire.
+Temporary DNS errors still fail validation and ask the user to retry; the rule
+does not automatically retry. Apply it where a domain check is appropriate, such
+as registration.
 
 An MX record does not prove that a mailbox exists or belongs to the user, or that
 its mail server is reachable. Require email verification in the application.
@@ -121,41 +124,24 @@ listed yet, and legitimate domains may occasionally be listed upstream. Existing
 accounts are not changed. Report list corrections to the
 [upstream project](https://github.com/disposable-email-domains/disposable-email-domains).
 
-## Development and contributions
+## Updates
 
-See [CONTRIBUTING.md](https://github.com/leancaptain/lara-email/blob/main/CONTRIBUTING.md) for setup, checks, local application testing,
-and the release process. Report package bugs through
-[GitHub issues](https://github.com/leancaptain/lara-email/issues).
-
-```sh
-git clone https://github.com/leancaptain/lara-email.git
-cd lara-email
-composer install
-composer test
-composer lint:check
-composer analyse
-```
-
-Tests mock DNS and include standalone rule tests and Laravel validator integration.
-CI runs on PHP 8.4 and 8.5 with native `intl` and with the IDN polyfill.
-
-## Disposable-domain updates
-
-From a source checkout, run:
+The disposable-domain list is bundled with the package. Applications receive
+reviewed list changes through package releases. Update within the installed
+version constraint with:
 
 ```sh
-composer update-domains
+composer update leancaptain/lara-email
 ```
 
-The updater downloads the list and CC0 license from the same upstream commit,
-validates the data, and records the commit and SHA-256 checksum in
-`resources/disposable-email-domains.json`. Review changes before release.
+Review the [release notes](CHANGELOG.md) and test validation in your application
+before deploying an update.
 
-A weekly GitHub Actions workflow proposes updates through pull requests. Enable
-"Allow GitHub Actions to create and approve pull requests" in the repository's
-Actions settings for this workflow to open pull requests. The workflow does not
-merge them or publish releases. Applications receive list changes when they update
-this Composer package.
+## Contributing and support
+
+Report package bugs through [GitHub issues](https://github.com/leancaptain/lara-email/issues).
+See [CONTRIBUTING.md](https://github.com/leancaptain/lara-email/blob/main/CONTRIBUTING.md)
+for development setup, checks, list updates, and the maintainer release process.
 
 ## License
 

@@ -1,6 +1,6 @@
 {
     "name": "leancaptain/lara-email",
-    "description": "Minimal Laravel validation for permanent email domains with usable mail records.",
+    "description": "Minimal Laravel validation that rejects example and disposable email domains and requires usable MX records.",
     "homepage": "https://github.com/leancaptain/lara-email",
     "keywords": [
         "laravel",
@@ -67,6 +67,7 @@
             "/tests",
             "/scripts",
             "/CONTRIBUTING.md",
+            "/docs",
             "/.gitignore",
             "/.gitattributes",
             "/phpunit.xml",

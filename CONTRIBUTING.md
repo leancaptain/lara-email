@@ -51,6 +51,11 @@ Run `composer update-domains`, review all three changed resource files, and run
 corrections belong in the upstream project; package releases distribute its
 reviewed snapshots.
 
+A weekly GitHub Actions workflow proposes list updates through pull requests.
+Enable "Allow GitHub Actions to create and approve pull requests" in the
+repository's Actions settings for this workflow to open pull requests. The
+workflow does not merge them or publish releases.
+
 ## Release checklist for maintainers
 
 1. Ensure `https://github.com/leancaptain/lara-email` is public and contains the
@@ -70,8 +75,6 @@ reviewed snapshots.
    `composer.json`. See [Packagist's publishing instructions](https://packagist.org/about).
 5. Verify `composer require leancaptain/lara-email:^0.1` in a clean Laravel 13
    application and publish release notes describing behavior and list changes.
-6. After the first release is available, update the README installation section
-   to make Packagist installation the default and remove the pre-publication wording.
 
 Never move a published tag. Use a new version for corrections. Development tools,
 tests, and workflows are excluded from distribution archives; runtime source,
