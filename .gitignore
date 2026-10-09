@@ -1,0 +1,37 @@
+# Dependencies
+/vendor/
+/node_modules/
+/composer.lock
+
+# Cache & Tooling
+.phpstan-cache/
+.phpunit.cache
+.phpunit.result.cache
+/.idea/
+/.vscode/
+.phpactor.json
+npm-debug.log
+yarn-error.log
+
+# Environment & Credentials
+.env
+.env.backup
+.env.production
+auth.json
+storage/*.key
+
+# Storage & Build Artifacts
+/public/build
+/public/storage
+/public/hot
+/public_html/storage
+/public_html/hot
+/storage/pail
+app/storage/
+bootstrap/compiled.php
+
+# Virtual Machines & OS Files
+Homestead.yaml
+Homestead.json
+/.vagrant
+.DS_Store

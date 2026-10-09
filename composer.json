@@ -1,0 +1,81 @@
+{
+    "name": "leancaptain/lara-email",
+    "description": "Minimal Laravel validation for permanent email domains with usable mail records.",
+    "homepage": "https://github.com/leancaptain/lara-email",
+    "keywords": [
+        "laravel",
+        "email",
+        "validation",
+        "disposable",
+        "mx"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/leancaptain/lara-email/issues",
+        "source": "https://github.com/leancaptain/lara-email"
+    },
+    "authors": [
+        {
+            "name": "Mahmudul Hasan",
+            "email": "mahmudul.bd.90@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "egulias/email-validator": "^4.0",
+        "illuminate/contracts": "^13.0",
+        "symfony/polyfill-intl-idn": "^1.33"
+    },
+    "require-dev": {
+        "illuminate/validation": "^13.0",
+        "laravel/pint": "^1.30",
+        "mockery/mockery": "^1.6",
+        "pestphp/pest": "^4.7",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "LeanCaptain\\LaraEmail\\": "src/"
+        }
+    },
+    "scripts": {
+        "test": "pest --compact",
+        "lint": "pint",
+        "lint:check": "pint --test",
+        "analyse": "phpstan analyse --no-progress",
+        "update-domains": "php scripts/update-domains.php"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
+    },
+    "archive": {
+        "exclude": [
+            "/.*",
+            "/auth.json",
+            "/node_modules",
+            "/vendor",
+            "/.github",
+            "/tests",
+            "/scripts",
+            "/CONTRIBUTING.md",
+            "/.gitignore",
+            "/.gitattributes",
+            "/phpunit.xml",
+            "/phpstan.neon",
+            "/pint.json",
+            "/composer.lock",
+            "/.phpunit.cache",
+            "/.phpstan-cache",
+            "/.phpunit.result.cache"
+        ]
+    }
+}

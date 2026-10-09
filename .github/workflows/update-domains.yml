@@ -1,0 +1,39 @@
+name: Update disposable domains
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-disposable-domains
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer update-domains
+      - run: composer test
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: maintenance/disposable-domains
+          delete-branch: true
+          add-paths: resources/
+          commit-message: 'Refresh disposable email domain snapshot'
+          title: 'Refresh disposable email domain snapshot'
+          body: |
+            Updates the domain list and license from a pinned upstream commit.
+            The package tests passed before this pull request was created.
