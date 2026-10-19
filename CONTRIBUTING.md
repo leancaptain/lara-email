@@ -46,21 +46,28 @@ the application independently.
 
 ## Update the bundled list
 
-Run `composer update-domains`, review all three changed resource files, and run
-`composer test`. The updater requires outbound HTTPS access to GitHub. List
-corrections belong in the upstream project; package releases distribute its
-reviewed snapshots.
+Before preparing a release, refresh the snapshot locally from the repository root:
 
-A weekly GitHub Actions workflow proposes list updates through pull requests.
-Enable "Allow GitHub Actions to create and approve pull requests" in the
-repository's Actions settings for this workflow to open pull requests. The
-workflow does not merge them or publish releases.
+```sh
+composer update-domains
+composer test
+```
+
+The updater requires outbound HTTPS access to GitHub. It fetches the domain list
+and license from the same upstream commit, validates them, and updates the three
+`resources/disposable-email-domains.*` files, including source metadata. Review
+and commit these changes before releasing. List corrections belong in the
+upstream project.
+
+Consumers receive the refreshed snapshot when they update to a package release
+that includes it.
 
 ## Release checklist for maintainers
 
 1. Ensure `https://github.com/leancaptain/lara-email` is public and contains the
    package source on `main`.
-2. Run the checks above and require the GitHub Actions matrix to pass on the
+2. Refresh and review the bundled list locally as described above, then run the
+   checks and require the GitHub Actions matrix to pass on the
    commit being released. Review the bundled list's source metadata and licenses.
 3. Create a semantic version tag, starting with `v0.1.0` for the initial release:
 
